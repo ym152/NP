@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Product Recommendation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    /* ================================
+       通用页面样式
+       ================================ */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 0;
+      overflow: auto;  /* 允许页面滚动 */
+    }
+
+    /* ================================
+       顶部横幅 “Product Assistant”
+       ================================ */
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      width: 100%;
+      box-sizing: border-box;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      height: 70px;
+    }
+    .star-logo {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #888;
+      font-weight: normal;
+    }
+
+    /* ================================
+       推荐容器
+       ================================ */
+    .recommendation-wrapper {
+      display: block;
+      max-width: 1200px;
+      margin: 100px auto 40px auto; 
+      padding: 0 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .recommend-note-top {
+      margin-bottom: 30px;
+      font-size: 26px;
+      color: #222;
+      font-weight: bold;
+      line-height: 1.6;
+    }
+
+    /* ================================
+       主容器：左右布局
+       - 让左右间距适度变大
+       ================================ */
+    .container {
+      display: flex;
+      flex-wrap: wrap;       
+      gap: 60px;   /* 加大 gap，让左右分得更开 */
+      align-items: flex-start;
+      justify-content: center; 
+      background-color: #fafafa;
+      border-radius: 5px;
+      padding: 30px; /* 让容器更宽松 */
+      text-align: left;
+    }
+
+    /* 左侧：主图 + 轮播 */
+    .product-images {
+      flex: 1 1 400px;
+      max-width: 500px; 
+    }
+    .main-image {
+      width: 100%;
+      display: block;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      object-fit: cover;
+    }
+    .carousel-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .arrow-button {
+      cursor: pointer;
+      font-size: 24px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    .arrow-button:hover {
+      background-color: #eee;
+    }
+    .thumbnails {
+      display: flex;
+      gap: 5px;
+    }
+    .thumbnails img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      padding: 2px;
+      background-color: #fff;
+      transition: border-color 0.3s;
+    }
+    .thumbnails img:hover {
+      border-color: #2a5bd8;
+    }
+
+    /* 右侧：文本信息 + 按钮 
+       - 优化内部间距
+    */
+    .product-details {
+      flex: 1 1 300px;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px; /* 让内部元素间距更舒展 */
+    }
+    .product-details h2 {
+      margin: 0;
+      font-size: 1.5rem; 
+      font-weight: bold; 
+    }
+
+    /* 虚线框 (保留) + 文本 */
+    .dashed-box {
+      border: 1px dashed #ccc;
+      padding: 10px 15px;
+      margin-bottom: 0; /* 减少与下方的空隙，整体更紧凑 */
+    }
+    .small-gray {
+      color: #777;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* 价格 + 购物车按钮 */
+    .price {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin: 0; 
+    }
+    .cart-button {
+      background-color: #2A5BD8;
+      color: #fff;
+      padding: 15px 80px; 
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s;
+      align-self: flex-start;
+    }
+    .cart-button:hover {
+      background-color: #1f4aaf;
+    }
+    .cart-message {
+      display: none;
+      font-size: 0.9rem;
+      color: green;
+    }
+
+    /* about this item */
+    .about-divider {
+      margin: 0.5rem 0;
+      border: none;
+      border-top: 1px dashed #ccc; 
+    }
+    .about-title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 0.01rem;
+    }
+    .about-list {
+      list-style: disc;
+      margin-left: 20px;
+      padding-left: 0;
+      margin-top: 0.01rem; 
+    }
+    .about-list li {
+      margin-bottom: 0.3rem;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- 顶部横幅 -->
+  <div class="header">
+    <!-- 去掉动画、用 <g> 包住圆和线，rotate 45° -->
+    <svg class="star-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+      <!-- 星形本体 -->
+      <path fill="#888" d="M287.9 17.8L354 150.2 499.5 171.5C519.8 173.7 529.9 196.1 514.4 209.5L406.6 303.4 430.6 448.5C433.1 468.8 413.9 483.7 399.4 475.3L288 410.6 176.6 475.3C162.1 483.7 142.9 468.8 145.4 448.5L169.4 303.4 61.6 209.5C46.1 196.1 56.2 173.7 76.5 171.5L222 150.2 287.1 17.8C293.9 0.6 302.1 0.6 307.9 17.8H287.9z"/>
+      <!-- 圆 + 斜线用 g 来旋转 -->
+      <g transform="rotate(45, 448, 448)">
+        <circle cx="448" cy="448" r="80" stroke="#888" stroke-width="30" fill="none" />
+        <line x1="512" y1="512" x2="576" y2="576" stroke="#888" stroke-width="30" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h2>Product Assistant</h2>
+  </div>
+
+  <!-- 推荐容器 -->
+  <div class="recommendation-wrapper">
+    <div class="recommend-note-top">
+      Based on your needs, we recommend the following sofa for you.
+    </div>
+
+    <!-- 主容器（左右布局） -->
+    <div class="container">
+      <!-- 左侧：大图 + 轮播缩略图 -->
+      <div class="product-images">
+        <!-- 默认展示B2.png -->
+        <img id="mainImage" class="main-image" src="B3.png" alt="Recommended Sofa Main Image" />
+        <div class="carousel-container">
+          <div class="arrow-button" id="prevArrow">&#9664;</div>
+          <div class="thumbnails" id="thumbnailContainer"></div>
+          <div class="arrow-button" id="nextArrow">&#9654;</div>
+        </div>
+      </div>
+
+      <!-- 右侧：文本信息 + 按钮 -->
+      <div class="product-details">
+        <h2>Sofa, Perfect for modern minimalist style living room and pet-friendly design.</h2>
+
+        <!-- 保留虚线框 + text -->
+        <div class="dashed-box">
+          <p class="small-gray">
+            Please check the details of our recommended product below.
+          </p>
+        </div>
+
+        <!-- 价格 + 购物车按钮 + 提示不变 -->
+        <div class="price">$392.55</div>
+        <button class="cart-button" id="addToCartBtn">Add to cart</button>
+        <div class="cart-message" id="cartMessage">This product has been added to cart!</div>
+
+        <hr class="about-divider"/>
+        <div class="about-title">About this item</div>
+        <ul class="about-list">
+          <li>Modern Comfortable Sofa</li>
+          <li>Chic Deep Channel Tufting</li>
+          <li>Supported by sturdy legs</li>
+          <li>Easy to assemble and care</li>
+          <li>Contact us at any time for support</li>
+        </ul>
+      </div>
+    </div><!-- /.container -->
+  </div><!-- /.recommendation-wrapper -->
+
+  <script>
+    /*
+      JS部分:
+      - 只有2张图片: B1.png, B3.png
+      - 默认B2
+      - 左右箭头 or 缩略图切换
+    */
+
+    const mainImage = document.getElementById("mainImage");
+    const thumbnailContainer = document.getElementById("thumbnailContainer");
+    const prevArrow = document.getElementById("prevArrow");
+    const nextArrow = document.getElementById("nextArrow");
+    const cartButton = document.getElementById("addToCartBtn");
+    const cartMessage= document.getElementById("cartMessage");
+
+    // 2张图: B2(默认显示), B1(轮播末尾)
+    const images = ["B3.png", "B1.png"];
+    let currentIndex = 0; // index=0 => B3
+
+    // 初始化缩略图
+    renderThumbnails();
+
+    // 购物车按钮
+    cartButton.addEventListener("click", () => {
+      cartMessage.style.display = "block";
+      setTimeout(() => {
+        cartMessage.style.display = "none";
+      }, 2000);
+    });
+
+    // 左右箭头 => 切换
+    prevArrow.addEventListener("click", () => {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      updateMainImage();
+    });
+    nextArrow.addEventListener("click", () => {
+      currentIndex = (currentIndex + 1) % images.length;
+      updateMainImage();
+    });
+
+    function renderThumbnails() {
+      thumbnailContainer.innerHTML = "";
+      images.forEach((src, idx) => {
+        const thumb = document.createElement("img");
+        thumb.src = src;
+        thumb.alt = src;
+        thumb.addEventListener("click", () => {
+          currentIndex = idx;
+          updateMainImage();
+        });
+        thumbnailContainer.appendChild(thumb);
+      });
+      // 默认显示 B3(index=0)
+      updateMainImage();
+    }
+
+    function updateMainImage() {
+      mainImage.src = images[currentIndex];
+    }
+  </script>
+</body>
+</html>
